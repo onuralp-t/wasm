@@ -3,25 +3,31 @@
 // JS-defined:
 void wasm_log(const char *msg);
 
-#define SCREEN_WIDTH 800u
-#define SCREEN_HEIGHT 600u
+constexpr uint32_t SCREEN_WIDTH = 800u;
+constexpr uint32_t SCREEN_HEIGHT = 600u;
 
 struct {
-  const uint32_t WIDTH;
-  const uint32_t HEIGHT;
   uint8_t pixels[SCREEN_WIDTH * SCREEN_HEIGHT * 4u];
-} screen = {.WIDTH = SCREEN_WIDTH, .HEIGHT = SCREEN_HEIGHT};
+} screen;
 
-uint32_t screen_get_width(void)  { return screen.WIDTH; }
-uint32_t screen_get_height(void) { return screen.HEIGHT; }
+__attribute__((pure))
+uint32_t screen_get_width(void)  { return SCREEN_WIDTH; }
+
+__attribute__((pure))
+uint32_t screen_get_height(void) { return SCREEN_HEIGHT; }
+
+__attribute__((pure))
 uint8_t* screen_get_pixels(void) { return screen.pixels; }
 
+__attribute__((pure))
+uint32_t screen_get_pixels_size(void) { return SCREEN_WIDTH * SCREEN_HEIGHT * 4u; }
+
 void update(uint32_t frame_number) {
-    for (uint32_t y = 0u; y < screen.HEIGHT; y++)
+    for (uint32_t y = 0u; y < SCREEN_HEIGHT; y++)
     {
-        for (uint32_t x = 0u; x < screen.WIDTH; x++)
+        for (uint32_t x = 0u; x < SCREEN_WIDTH; x++)
         {
-            uint32_t idx = (y * screen.WIDTH + x) * 4u;
+            uint32_t idx = (y * SCREEN_WIDTH + x) * 4u;
             screen.pixels[idx + 0] = x + frame_number;
             screen.pixels[idx + 1] = y + frame_number;
             screen.pixels[idx + 2] = 150u;

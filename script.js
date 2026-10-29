@@ -19,7 +19,7 @@ async function init() {
   const wasm = wasm_compiled.instance;
   const we = wasm.exports;
 
-  console.log("WASM.EXPORTS: ", we);
+  console.log("wasm.exports: ", we);
 
   // WASM memory is a linearly stored series of raw bytes
   // `we.memory.buffer` is an ArrayBuffer, it stores the WASM memory.
@@ -49,21 +49,18 @@ async function init() {
   // second element is screen height
   // and third element is uint8 array of pixels of size width*height*4 (4 for RGBA)
 
-  function read_screen_from_wasm(exported_screen) {
-    const view = new DataView(wasm.exports.memory.buffer);
-    const screen_offset = exported_screen.value >>> 0; // coerce to uint32 for wasm32 pointers
-    const screen_width = view.getUint32(screen_offset + 0, true);
-    const screen_height = view.getUint32(screen_offset + 4, true);
-    const screen_pixels = new Uint8ClampedArray(wasm.exports.memory.buffer, screen_offset + 8, screen_width * screen_height * 4);
+  function read_screen_from_wasm() {
+    const screen_width = we.screen_get_width();
+    const screen_height = we.screen_get_height();
+    const screen_pixels = new Uint8ClampedArray(we.memory.buffer, we.screen_get_pixels(), screen_width * screen_height * 4);
     return { screen_width, screen_height, screen_pixels };
   }
-  const { screen_width, screen_height, screen_pixels } = read_screen_from_wasm(wasm.exports.screen);
+  const { screen_width, screen_height, screen_pixels } = read_screen_from_wasm(we.screen);
   console.log(`screen_width: ${screen_width}, screen_height: ${screen_height}`);
 
   canvas_resize(screen_width, screen_height, canvas);
 
   const imageData = new ImageData(screen_pixels, screen_width, screen_height);
-  console.log("IMAGE DATA:", imageData);
 
   // https://developer.mozilla.org/en-US/docs/Web/API/DedicatedWorkerGlobalScope/requestAnimationFrame#parameters
   // https://github.com/tsoding/snake-c-wasm/blob/master/wasm_main.js#L77
@@ -72,11 +69,10 @@ async function init() {
   const utf8_decoder = new TextDecoder("utf-8");
 
   function wasm_log(c_str) {
-    // @CAPTURES u8_view
     const str_start = c_str;
 
     let str_end = str_start;
-    while (u8_view[str_end] !== 0) {
+    while (u8_view[str_end] !== 0) { // checking for C's null terminated string's end
       str_end++;
     }
     const message = utf8_decoder.decode(u8_view.slice(str_start, str_end));
@@ -86,9 +82,9 @@ async function init() {
 
   let frame = 0;
   function loop() {
-    we.update(frame++);
+    we.update(frame++); // update the screen_pixels data which lives in we.memory.buffer
 
-    ctx.putImageData(imageData, 0, 0);
+    ctx.putImageData(imageData, 0, 0); // imageData is a view on screen_pixels which is in we.memory.buffer
 
     requestAnimationFrame(loop);
   }
