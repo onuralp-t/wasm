@@ -4,7 +4,6 @@ function canvas_resize(width, height, canvas) {
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
   canvas.getContext("2d").scale(width, height);
-  console.log("CANVAS RESIZED TO: ", width, height);
 }
 
 async function init() {
@@ -32,6 +31,7 @@ async function init() {
 
   // `Int32Array(we.memory.buffer)` creates an i32_view over the underlying ArrayBuffer, treating ArrayBuffer's bytes as i32's.
   const i32_view = new Int32Array(we.memory.buffer);
+  const u32_view = new Uint32Array(we.memory.buffer);
   const u8_view = new Uint8Array(we.memory.buffer); // for cstrings
 
   // `we.memory.buffer` is the ArrayBuffer containing WASM objects.
@@ -48,22 +48,21 @@ async function init() {
   // in the main.wasm module, the `screen` struct's first element (idx=0) is the screen width
   // second element is screen height
   // and third element is uint8 array of pixels of size width*height*4 (4 for RGBA)
-  const PTRSIZE = 4; // wasm32 so pointers are 4 bytes
 
-  const SCREEN_WIDTH = we.screen.value + 0*PTRSIZE;
-  const SCREEN_HEIGHT = we.screen.value + 1*PTRSIZE;
+  function read_screen_from_wasm(exported_screen) {
+    const view = new DataView(wasm.exports.memory.buffer);
+    const screen_offset = exported_screen.value >>> 0; // coerce to uint32 for wasm32 pointers
+    const screen_width = view.getUint32(screen_offset + 0, true);
+    const screen_height = view.getUint32(screen_offset + 4, true);
+    const screen_pixels = new Uint8ClampedArray(wasm.exports.memory.buffer, screen_offset + 8, screen_width * screen_height * 4);
+    return { screen_width, screen_height, screen_pixels };
+  }
+  const { screen_width, screen_height, screen_pixels } = read_screen_from_wasm(wasm.exports.screen);
+  console.log(`screen_width: ${screen_width}, screen_height: ${screen_height}`);
 
-  canvas_resize(SCREEN_WIDTH, SCREEN_HEIGHT, canvas);
+  canvas_resize(screen_width, screen_height, canvas);
 
-  const SCREEN_PIXELS_SIZE = SCREEN_WIDTH * SCREEN_HEIGHT * 4;
-
-  const screen_pixels = new Uint8ClampedArray(
-    we.memory.buffer,
-    we.screen.value + 2*PTRSIZE,
-    SCREEN_PIXELS_SIZE,
-  );
-
-  const imageData = new ImageData(screen_pixels, SCREEN_WIDTH, SCREEN_HEIGHT);
+  const imageData = new ImageData(screen_pixels, screen_width, screen_height);
   console.log("IMAGE DATA:", imageData);
 
   // https://developer.mozilla.org/en-US/docs/Web/API/DedicatedWorkerGlobalScope/requestAnimationFrame#parameters

@@ -12,6 +12,10 @@ struct {
   uint8_t pixels[SCREEN_WIDTH * SCREEN_HEIGHT * 4u];
 } screen = {.WIDTH = SCREEN_WIDTH, .HEIGHT = SCREEN_HEIGHT};
 
+uint32_t screen_get_width(void)  { return screen.WIDTH; }
+uint32_t screen_get_height(void) { return screen.HEIGHT; }
+uint8_t* screen_get_pixels(void) { return screen.pixels; }
+
 void update(uint32_t frame_number) {
     for (uint32_t y = 0u; y < screen.HEIGHT; y++)
     {
