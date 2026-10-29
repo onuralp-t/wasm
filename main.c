@@ -1,22 +1,27 @@
 #include <stdint.h>
-#define WIDTH 800u
-#define HEIGHT 600u
 
-uint8_t w_RGBA[WIDTH * HEIGHT * 4u];
+// JS-defined:
+void wasm_log(const char *msg);
 
-void wasm_log(const char* msg);
+#define SCREEN_WIDTH 800u
+#define SCREEN_HEIGHT 600u
 
-void update(uint64_t frame_number)
-{
-    for (uint16_t y = 0u; y < HEIGHT; y++)
+struct {
+  const uint32_t WIDTH;
+  const uint32_t HEIGHT;
+  uint8_t pixels[SCREEN_WIDTH * SCREEN_HEIGHT * 4u];
+} screen = {.WIDTH = SCREEN_WIDTH, .HEIGHT = SCREEN_HEIGHT};
+
+void update(uint32_t frame_number) {
+    for (uint32_t y = 0u; y < screen.HEIGHT; y++)
     {
-        for (uint16_t x = 0u; x < WIDTH; x++)
+        for (uint32_t x = 0u; x < screen.WIDTH; x++)
         {
-            uint16_t idx = (y * WIDTH + x) * 4u;
-            w_RGBA[idx + 0] = x + frame_number;
-            w_RGBA[idx + 1] = y + frame_number;
-            w_RGBA[idx + 2] = 150u;
-            w_RGBA[idx + 3] = 255u;
+            uint32_t idx = (y * screen.WIDTH + x) * 4u;
+            screen.pixels[idx + 0] = x + frame_number;
+            screen.pixels[idx + 1] = y + frame_number;
+            screen.pixels[idx + 2] = 150u;
+            screen.pixels[idx + 3] = 255u;
         }
     }
     wasm_log("message from WASM update()!");

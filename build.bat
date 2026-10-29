@@ -1,5 +1,6 @@
 clang --target=wasm32 ^
   -O2 ^
+  -std=c23 ^
   -ffreestanding -nostdlib ^
   -Wl,--no-entry ^
   -Wl,--export-all ^
