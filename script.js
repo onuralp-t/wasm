@@ -45,30 +45,21 @@ async function init() {
   // ArrayBuffer[INDEX], ArrayBuffer[INDEX+1], ArrayBuffer[INDEX+2], ArrayBuffer[INDEX+3] corresponds to i32_view[INDEX/4].
   // We create an i32_view over the ArrayBuffer and get `i32_view[we.var / 4] === 123`.
 
-  // For a WASM object `int32_t obj = 4321;`:
-  // This helper implements C-style-ish WASM object access API, using the INDEX `we.obj` we get from the compiled WASM instance.
-  // `wasm_object(we.obj, i)` evaluates to the equivalent of `*(&obj + i)`
-  // If obj is an integer, do `wasm_object(we.obj, 0)`.
-  // If obj is a struct or array, do `wasm_object(we.obj, i)` to get ith element.
-
-  function wasm_object(wasm_exports_obj, idx) {
-    // @CAPTURES i32_view
-    return i32_view[(wasm_exports_obj + idx * 4) >> 2];
-  }
-
-  // in the main.wasm module, the `screen` structs first element (idx=0) is the screen width
+  // in the main.wasm module, the `screen` struct's first element (idx=0) is the screen width
   // second element is screen height
   // and third element is uint8 array of pixels of size width*height*4 (4 for RGBA)
-  const SCREEN_WIDTH = wasm_object(we.screen, 0);
-  const SCREEN_HEIGHT = wasm_object(we.screen, 1);
+  const PTRSIZE = 4; // wasm32 so pointers are 4 bytes
+
+  const SCREEN_WIDTH = we.screen.value + 0*PTRSIZE;
+  const SCREEN_HEIGHT = we.screen.value + 1*PTRSIZE;
+
   canvas_resize(SCREEN_WIDTH, SCREEN_HEIGHT, canvas);
 
-  const SCREEN_SIZE = SCREEN_WIDTH * SCREEN_HEIGHT;
-  const SCREEN_PIXELS_SIZE = SCREEN_SIZE * 4;
+  const SCREEN_PIXELS_SIZE = SCREEN_WIDTH * SCREEN_HEIGHT * 4;
 
   const screen_pixels = new Uint8ClampedArray(
     we.memory.buffer,
-    wasm_object(we.screen, 2),
+    we.screen.value + 2*PTRSIZE,
     SCREEN_PIXELS_SIZE,
   );
 
